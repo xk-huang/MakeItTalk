@@ -383,7 +383,10 @@ class Image_translation_block():
             fls[:, 0::3] += 130
             fls[:, 1::3] += 80
 
-        writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mjpg'), 62.5, (256 * 3, 256))
+        writer = cv2.VideoWriter('out.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 62.5, (256 * 3, 256))
+        video_writer = cv2.VideoWriter(
+            'examples/{}_{}.output.mp4'.format(prefix, filename[:-4]), cv2.VideoWriter_fourcc(*'mp4v'), 62.5, (256, 256)
+        )
 
         for i, frame in enumerate(fls):
 
@@ -420,8 +423,10 @@ class Image_translation_block():
             for i in range(g_out.shape[0]):
                 frame = np.concatenate((ref_in[i], g_out[i], fls_in[i]), axis=1) * 255.0
                 writer.write(frame.astype(np.uint8))
+                video_writer.write((g_out[i] * 255.0).astype(np.uint8))
 
         writer.release()
+        video_writer.release()
         print('Time - only video:', time.time() - st)
 
         if(filename is None):
@@ -429,7 +434,8 @@ class Image_translation_block():
         os.system('ffmpeg -loglevel error -y -i out.mp4 -i {} -pix_fmt yuv420p -strict -2 examples/{}_{}.mp4'.format(
             'examples/'+filename[9:-16]+'.wav',
             prefix, filename[:-4]))
-        # os.system('rm out.mp4')
+        os.system('rm out.mp4')
+        os.system("ffmpeg -loglevel error -y -i examples/{}_{}.output.mp4 -i {} -pix_fmt yuv420p -strict -2 examples/{}_{}.output.audio.mp4".format(prefix, filename[:-4], 'examples/'+filename[9:-16]+'.wav', prefix, filename[:-4]))
 
         print('Time - ffmpeg add audio:', time.time() - st)
 
